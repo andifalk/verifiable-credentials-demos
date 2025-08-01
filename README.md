@@ -1,2 +1,3 @@
-# verifiable-credentials-demos
+# Verifiable Credentials Demos
+
 Demos for Verifiable Credentials
