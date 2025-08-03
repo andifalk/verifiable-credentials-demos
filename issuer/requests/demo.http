@@ -1,0 +1,17 @@
+### GET request to example server
+GET http://localhost:8080/userinfo
+Accept: application/json
+Authorization: Bearer {{$auth.token("Spring")}}
+
+### POST request to get credential
+POST http://localhost:8080/credential
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{$auth.token("Spring")}}
+
+{
+  "format": "vc+sd-jwt",
+  "credential_identifier": "UniversityDegreeCredential"
+}
+
+###
