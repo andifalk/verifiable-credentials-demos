@@ -50,8 +50,11 @@ class AuthorizationServerConfig {
     @Order(ORDER_PUBLIC)
     fun publicSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .securityMatcher("/.well-known/openid-credential-issuer/**", "/error/**")
-            .anonymous {}
+            .securityMatcher(
+                "/.well-known/openid-credential-issuer/**",
+                "/credential_offer/**",
+                "/error/**",
+            ).anonymous {}
             .csrf { csrf -> csrf.disable() }
             .authorizeHttpRequests { authorize ->
                 authorize

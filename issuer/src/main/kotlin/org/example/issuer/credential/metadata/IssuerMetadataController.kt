@@ -1,4 +1,4 @@
-package org.example.issuer.credential
+package org.example.issuer.credential.metadata
 
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -29,7 +29,13 @@ class IssuerMetadataController {
                         "BankAccountCredential" to
                             CredentialConfigurationSupported(
                                 format = "jwt_vc",
-                                proofTypesSupported = mapOf("jwt" to ProofTypeSupported(setOf("RSA256"))),
+                                proofTypesSupported =
+                                    mapOf(
+                                        "jwt" to
+                                            ProofTypeSupported(
+                                                setOf("RSA256"),
+                                            ),
+                                    ),
                             ),
                     ),
             )
