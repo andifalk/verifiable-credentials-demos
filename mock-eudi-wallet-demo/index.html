@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EUDI Wallet Demo · SD-JWT VC · 4 Verifier</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="assets/european-union.svg" alt="EU Flagge" width="28" height="18">
+    <span>EUDI Wallet – Mock Demo</span>
+  </div>
+  <div class="subtitle">Selective Disclosure (SD-JWT) · QR-Flow · 4 Verifier · 2 Credentials</div>
+</header>
+
+<section class="panel diagram">
+  <h3>🔺 Trust Triangle (with Specifications)</h3>
+  <p>Standards: <strong>OID4VCI</strong> (Issuance), <strong>OIDC4VP</strong> (Presentation), <strong>SD-JWT (Selective Disclosure JWT)</strong> für selektive Offenlegung.</p>
+  <div class="diagram-wrap">
+    <img src="assets/trust-triangle-specs.svg" alt="Trust Triangle Diagramm mit OID4VCI / OIDC4VP / SD-JWT" class="diagram-img">
+  </div>
+</section>
+
+<main>
+  <section class="panel" id="issuer">
+    <h3>① Issuer</h3>
+      <p>Issues digital ID documents as <em>Verifiable Credentials</em> (Supporting <em>Selective Disclosure</em>).</p>
+    <div class="issuer-actions">
+      <button class="primary" id="btnIssueId">Issue ID Card</button>
+      <button class="secondary" id="btnIssueDegree">Issue University Degree</button>
+    </div>
+    <details>
+      <summary>Issued Credentials (JSON)</summary>
+      <div class="cred-list">
+        <div>
+          <strong>ID Card</strong>
+          <pre id="credentialId"></pre>
+        </div>
+        <div>
+          <strong>University Degree</strong>
+          <pre id="credentialDegree"></pre>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel" id="wallet">
+    <h3>② Wallet (Holder)</h3>
+    <p>Choose which attributes to disclose. Non-disclosed claims are visually blinded (SD-JWT-Style).</p>
+    <div class="wallet-grid">
+      <div>
+        <h4>ID Card</h4>
+        <form id="disclosureId">
+          <label><input type="checkbox" name="name"> Name</label>
+          <label><input type="checkbox" name="dob"> Date of Birth</label>
+          <label><input type="checkbox" name="ageOver18" checked> Age ≥ 18</label>
+          <label><input type="checkbox" name="street"> Street</label>
+          <label><input type="checkbox" name="city"> City</label>
+          <label><input type="checkbox" name="nationality"> Nationality</label>
+          <label><input type="checkbox" name="residenceEU" checked> Residency in the EU</label>
+        </form>
+        <div class="sdjwt-view" id="sdViewId"></div>
+      </div>
+      <div>
+        <h4>Hochschulabschluss</h4>
+        <form id="disclosureDegree">
+          <label><input type="checkbox" name="degree"> Degree (Title)</label>
+          <label><input type="checkbox" name="university"> University</label>
+          <label><input type="checkbox" name="year"> Graduation Year</label>
+        </form>
+        <div class="sdjwt-view" id="sdViewDegree"></div>
+      </div>
+    </div>
+    <div class="legend">
+      <span class="chip disclosed">disclosed</span>
+      <span class="chip blinded">blinded (Hash)</span>
+    </div>
+    <div class="actions">
+      <button class="secondary" id="btnPreview">Preview of Presentation</button>
+      <button class="primary" id="btnPresent">Send Presentation</button>
+      <button id="btnScanQr">Scan QR (simulation)</button>
+    </div>
+    <details>
+      <summary>Verifiable Presentation (JSON)</summary>
+      <pre id="presentation"></pre>
+    </details>
+  </section>
+
+  <section class="panel" id="verifier">
+    <h3>③ Verifier</h3>
+    <div class="verifier-grid four">
+      <div class="verifier-card">
+        <h4>Request A: Age Verification</h4>
+        <p>Requested: <strong>Age ≥ 18</strong></p>
+        <div class="qr-wrap">
+          <img src="assets/qr-placeholder.svg" alt="QR Placeholder" class="qr" id="qrA">
+          <div class="qr-label" id="qrALabel">QR: Off</div>
+        </div>
+        <div class="actions">
+          <button id="btnShowQrA">Show QR</button>
+          <button id="btnRequestA">Immediate Verification</button>
+        </div>
+        <div id="resultA" class="result"></div>
+      </div>
+      <div class="verifier-card">
+        <h4>Request B: Residency in EU</h4>
+        <p>Requested: <strong>residenceEU = true</strong></p>
+        <div class="qr-wrap">
+          <img src="assets/qr-placeholder.svg" alt="QR Placeholder" class="qr" id="qrB">
+          <div class="qr-label" id="qrBLabel">QR: Off</div>
+        </div>
+        <div class="actions">
+          <button id="btnShowQrB">Show QR</button>
+          <button id="btnRequestB">Immediate Verification</button>
+        </div>
+        <div id="resultB" class="result"></div>
+      </div>
+      <div class="verifier-card">
+        <h4>Anfrage C: Verify University Degree</h4>
+        <p>Requested: <strong>degree &amp; university</strong></p>
+        <div class="qr-wrap">
+          <img src="assets/qr-placeholder.svg" alt="QR Placeholder" class="qr" id="qrC">
+          <div class="qr-label" id="qrCLabel">QR: Off</div>
+        </div>
+        <div class="actions">
+          <button id="btnShowQrC">Show QR</button>
+          <button id="btnRequestC">Immediate Verification</button>
+        </div>
+        <div id="resultC" class="result"></div>
+      </div>
+      <div class="verifier-card">
+        <h4>Request D: Open Bank Account (KYC)</h4>
+        <p>Requested: <strong>ageOver18 = true</strong> &amp; <strong>residenceEU = true</strong></p>
+        <div class="qr-wrap">
+          <img src="assets/qr-placeholder.svg" alt="QR Placeholder" class="qr" id="qrD">
+          <div class="qr-label" id="qrDLabel">QR: Off</div>
+        </div>
+        <div class="actions">
+          <button id="btnShowQrD">Show QR</button>
+          <button id="btnRequestD">Immediate Verification</button>
+        </div>
+        <div id="resultD" class="result"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <img src="assets/wallet.svg" alt="" width="18" height="18">
+  <span>Simulates QR-Flow, 4 Verifier, 2 Credentials und SD-JWT-Visualization.</span>
+</footer>
+
+<!-- Modal: Consent -->
+<div id="modal" class="modal hidden" aria-hidden="true" role="dialog" aria-label="Confirm data sharing">
+  <div class="modal-content">
+    <h4>Confirm data sharing</h4>
+    <p>This Websit requests:</p>
+    <p id="modalRequest"><em>Unknown</em></p>
+    <p>You are currently sharing (Disclosures):</p>
+    <ul id="shareList"></ul>
+    <div class="modal-actions">
+      <button id="modalCancel">Cancel</button>
+      <button class="primary" id="modalConfirm">Share</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

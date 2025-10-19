@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="460" viewBox="0 0 820 460">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/>
+    </marker>
+  </defs>
+  <polygon points="410,70 140,400 680,400" fill="none" stroke="#c7d2fe" stroke-width="2"/>
+  <rect x="378" y="30" width="64" height="32" rx="6" fill="#1d4ed8"/>
+  <text x="410" y="50" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">Issuer</text>
+  <rect x="350" y="80" width="120" height="50" rx="10" fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="410" y="107" text-anchor="middle" fill="#0f172a" font-size="16" font-weight="600">Behörde</text>
+  <text x="410" y="125" text-anchor="middle" fill="#475569" font-size="12">stellt Credential aus</text>
+  <rect x="60" y="370" width="64" height="32" rx="6" fill="#1d4ed8"/>
+  <text x="92" y="390" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">Holder</text>
+  <rect x="40" y="310" width="160" height="50" rx="10" fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="120" y="337" text-anchor="middle" fill="#0f172a" font-size="16" font-weight="600">Wallet</text>
+  <text x="120" y="355" text-anchor="middle" fill="#475569" font-size="12">verwaltet &amp; präsentiert</text>
+  <rect x="696" y="370" width="64" height="32" rx="6" fill="#1d4ed8"/>
+  <text x="728" y="390" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">Verifier</text>
+  <rect x="620" y="310" width="160" height="50" rx="10" fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="700" y="337" text-anchor="middle" fill="#0f172a" font-size="16" font-weight="600">Dienstanbieter</text>
+  <text x="700" y="355" text-anchor="middle" fill="#475569" font-size="12">prüft Nachweis</text>
+  <line x1="410" y1="130" x2="120" y2="310" stroke="#1d4ed8" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="255" y="210" text-anchor="middle" fill="#475569" font-size="12">1) Issuance (OID4VCI)</text>
+  <line x1="120" y1="310" x2="700" y2="310" stroke="#1d4ed8" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="410" y="296" text-anchor="middle" fill="#475569" font-size="12">2) Presentation (OIDC4VP + SD-JWT VC)</text>
+  <line x1="700" y1="310" x2="410" y2="130" stroke="#1d4ed8" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="560" y="210" text-anchor="middle" fill="#475569" font-size="12">3) Status/Trust (optional)</text>
+</svg>

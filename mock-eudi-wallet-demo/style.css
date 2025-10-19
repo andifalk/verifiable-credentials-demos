@@ -1,0 +1,117 @@
+* { box-sizing: border-box; }
+:root {
+  --bg: #f7f9fc;
+  --panel: #ffffff;
+  --border: #dfe3eb;
+  --text: #0f172a;
+  --muted: #475569;
+  --primary: #1d4ed8;
+  --primary-ink: #ffffff;
+  --ok: #16a34a;
+  --bad: #dc2626;
+  --chip-bg: #eef2ff;
+  --chip-br: #c7d2fe;
+  --chip-muted: #e5e7eb;
+}
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  position: sticky; top: 0; z-index: 10;
+}
+.brand { display: flex; align-items: center; gap: .5rem; font-weight: 700; }
+.subtitle { color: var(--muted); font-size: .95rem; }
+main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem;
+  display: flex; flex-direction: column; gap: .5rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.panel.diagram { border-style: dashed; }
+.diagram-wrap { display: grid; place-items: center; padding: .5rem 0; }
+.diagram-img { width: min(760px, 95%); height: auto; }
+h3 { margin: .25rem 0 .5rem 0; }
+h4 { margin: .25rem 0 .5rem 0; }
+p { margin: .25rem 0; color: var(--muted); }
+pre {
+  background: #0b1220;
+  color: #e2e8f0;
+  padding: .75rem;
+  border-radius: 8px;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid #1f2937;
+}
+details summary { cursor: pointer; font-weight: 600; color: var(--text); }
+.issuer-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.cred-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+.wallet-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+form label { display: flex; align-items: center; gap: .5rem; }
+button {
+  appearance: none; border: 1px solid var(--border); background: #fff; color: var(--text);
+  padding: .6rem .9rem; border-radius: 10px; cursor: pointer; transition: .15s ease;
+}
+button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+button.primary { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+button.secondary { border-color: #93c5fd; background: #eff6ff; }
+.actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.sdjwt-view { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; }
+.chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  border: 1px solid var(--chip-br);
+  background: var(--chip-bg);
+  padding: .25rem .5rem; border-radius: 999px;
+  font-size: .85rem;
+}
+.chip .key { font-weight: 600; }
+.chip .val { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.chip.blinded { opacity: .55; border-style: dotted; background: var(--chip-muted); }
+.chip .lock { font-size: .95rem; }
+.legend { display: flex; align-items: center; gap: .5rem; margin-top: .35rem; }
+.verifier-grid.four { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.verifier-card { border: 1px dashed var(--border); border-radius: 10px; padding: .75rem; }
+.qr-wrap { display: flex; align-items: center; gap: .75rem; }
+.qr { width: 120px; height: 120px; opacity: .9; }
+.qr-label { color: var(--muted); font-size: .9rem; }
+.result { margin-top: .5rem; font-weight: 700; }
+.result.ok { color: var(--ok); }
+.result.bad { color: var(--bad); }
+footer {
+  margin-top: 1rem; padding: .75rem 1.25rem; display: flex; align-items: center; gap: .5rem;
+  color: var(--muted);
+}
+/* Modal */
+.modal { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(15,23,42,.45); }
+.modal.hidden { display: none; }
+.modal-content {
+  width: min(560px, 92vw);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,.2);
+}
+.modal-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .5rem; }
+ul#shareList { margin: .25rem 0 .5rem 1rem; }
+@media (max-width: 980px) {
+  .cred-list, .wallet-grid, .verifier-grid.four { grid-template-columns: 1fr; }
+}
