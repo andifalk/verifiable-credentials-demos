@@ -1,10 +1,10 @@
 ### GET request to example server
-GET http://localhost:8080/userinfo
+GET http://localhost:9091/userinfo
 Accept: application/json
 Authorization: Bearer {{$auth.token("Spring")}}
 
 ### POST request to get credential
-POST http://localhost:8080/credential
+POST http://localhost:9091/credential
 Accept: application/json
 Content-Type: application/json
 Authorization: Bearer {{$auth.token("Spring")}}

@@ -20,7 +20,7 @@ class CredentialOfferController {
                     listOf(
                         "UniversityDegreeCredential",
                         "DigitalIDCredential",
-                        "BankAccountCredential",
+                        "DriversLicenseCredential",
                     ),
                 grants = Grants(authorizationCode = GrantAuthorizationCode(UUID.randomUUID().toString())),
             )

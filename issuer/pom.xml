@@ -45,7 +45,11 @@
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>com.authlete</groupId>
+            <artifactId>sd-jwt</artifactId>
+            <version>1.6</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

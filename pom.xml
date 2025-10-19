@@ -29,5 +29,6 @@
   <modules>
     <module>issuer</module>
     <module>verifier</module>
+    <module>wallet</module>
   </modules>
 </project>
