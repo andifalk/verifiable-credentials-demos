@@ -3,6 +3,18 @@ GET http://localhost:9091/userinfo
 Accept: application/json
 Authorization: Bearer {{$auth.token("Spring")}}
 
+### GET request to get credential offer
+GET http://localhost:9091/credential_offer
+Accept: application/json
+
+### GET request to get credential offer
+GET http://localhost:9091/.well-known/jwt-vc-issuer
+Accept: application/json
+
+### GET request for issuer metadata
+GET http://localhost:9091/.well-known/openid-credential-issuer
+Accept: application/json
+
 ### POST request to get credential
 POST http://localhost:9091/credential
 Accept: application/json
@@ -13,5 +25,10 @@ Authorization: Bearer {{$auth.token("Spring")}}
   "format": "vc+sd-jwt",
   "credential_identifier": "UniversityDegreeCredential"
 }
+
+### GET request to example server
+GET http://localhost:9091/v3/api-docs
+Accept: application/json
+
 
 ###

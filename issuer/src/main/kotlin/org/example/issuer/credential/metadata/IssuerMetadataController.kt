@@ -1,14 +1,24 @@
 package org.example.issuer.credential.metadata
 
+import org.example.issuer.common.IssuerConsts
+import org.example.issuer.common.IssuerConsts.BASE_URL
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
 
-private const val BASE_URL = "http://localhost:8080"
-
 @RestController
 class IssuerMetadataController {
+
+    @GetMapping("/.well-known/jwt-vc-issuer")
+    fun jwtVcIssuer(): ResponseEntity<JwtVcIssuerMetadata> {
+        val issuerMetadata = JwtVcIssuerMetadata(
+            issuer = BASE_URL,
+            jwksUri = "$BASE_URL/oauth2/jwks"
+        )
+        return ResponseEntity.ok(issuerMetadata)
+    }
+
     @GetMapping("/.well-known/openid-credential-issuer")
     fun issuerMetadata(): ResponseEntity<IssuerMetadata> {
         val issuerMetadata =

@@ -1,6 +1,5 @@
 package org.example.issuer.credential
 
-import io.swagger.v3.oas.annotations.Operation
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
@@ -10,11 +9,10 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/credential")
-class CredentialController(
+@RequestMapping("/deferred_credential")
+class DeferredCredentialController(
     private val credentialService: CredentialService,
 ) {
-    @Operation(summary = "Get credential", description = "Get credential")
     @PostMapping
     fun issuerCredential(
         @AuthenticationPrincipal jwt: Jwt,

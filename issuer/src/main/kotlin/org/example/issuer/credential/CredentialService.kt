@@ -1,25 +1,29 @@
 package org.example.issuer.credential
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.authlete.sd.Disclosure
+import com.authlete.sd.SDJWT
+import com.authlete.sd.SDObjectBuilder
 import com.nimbusds.jose.JOSEObjectType
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.JWSHeader
-import com.nimbusds.jose.crypto.RSASSASigner
+import com.nimbusds.jose.crypto.factories.DefaultJWSSignerFactory
+import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
+import org.example.issuer.common.IssuerConsts.BASE_URL
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Service
+import tools.jackson.core.type.TypeReference
+import tools.jackson.databind.json.JsonMapper
 import java.net.URLDecoder
 import java.time.Instant
 import java.util.Date
-import java.util.UUID
 
 @Service
 class CredentialService(
     private val rsaKey: RSAKey,
-    private val objectMapper: ObjectMapper,
+    private val jsonMapper: JsonMapper,
 ) {
     fun issueCredential(
         jwt: Jwt,
@@ -32,7 +36,7 @@ class CredentialService(
             val detailsString = URLDecoder.decode(jwt.getClaim<String>("authorization_details"), "UTF-8")
 
             val authorizationDetails =
-                objectMapper.readValue(detailsString, object : TypeReference<List<AuthorizationDetail>>() {})
+                jsonMapper.readValue(detailsString, object : TypeReference<List<AuthorizationDetail>>() {})
 
             credentialId = authorizationDetails.getOrNull(0)?.credentialConfigurationId
         }
@@ -46,16 +50,16 @@ class CredentialService(
         }
 
         // 1. Define the VC payload
-        val now = Instant.now()
         val vcClaims =
-            mapOf(
+            mutableMapOf(
                 "@context" to listOf("https://www.w3.org/2018/credentials/v1"),
                 "type" to listOf("VerifiableCredential", credentialId),
-                "credentialSubject" to
-                    "credentialSubject" to buildCredentialSubject(credentialId, subject),
+                "sub" to subject,
             )
+        val credentials = buildCredentialSubject(credentialId, subject)
 
         // 2. Standard JWT claims
+        /*
         val claims =
             JWTClaimsSet
                 .Builder()
@@ -78,9 +82,14 @@ class CredentialService(
                     .build(),
                 claims,
             )
-        signedJWT.sign(signer)
+        signedJWT.sign(signer)*/
 
-        return signedJWT.serialize()
+        val disclosureList = credentials.map {
+            Disclosure(it.key, it.value)
+        }.toMutableList()
+
+        val credentialJwt = createCredentialJwt(vcClaims, disclosureList, rsaKey)
+        return SDJWT(credentialJwt.serialize(), disclosureList).toString()
     }
 
     private fun buildCredentialSubject(
@@ -107,6 +116,7 @@ class CredentialService(
                     "given_name" to "Alice",
                     "family_name" to "Schmidt",
                     "birthdate" to "1995-05-23",
+                    "over18" to true,
                     "nationality" to "DE",
                     "document_type" to "national_id_card",
                 )
@@ -121,6 +131,128 @@ class CredentialService(
                     "account_type" to "checking",
                 )
 
+            "DriversLicenseCredential" ->
+                mapOf(
+                    "id" to subject,
+                    "account_holder" to "Alice Schmidt",
+                    "issued_at" to "2015-07-12",
+                    "bic" to "COBADEFFXXX",
+                    "bank" to "Commerzbank",
+                    "account_type" to "checking",
+                )
+
             else -> throw IllegalArgumentException("Unsupported credential type: $identifier")
         }
+
+    private fun createCredentialJwt(
+        claims: MutableMap<String, Any>?, disclosableClaims: MutableList<Disclosure>?,
+        signingKey: JWK,
+    ): SignedJWT {
+        // Create the header part of a credential JWT.
+        val header: JWSHeader = createCredentialJwtHeader(signingKey)
+
+        // Create the payload part of a credential JWT.
+        val payload: MutableMap<String?, Any?> =
+            createCredentialJwtPayload(claims, disclosableClaims)
+
+        // Create a credential JWT. (not signed yet)
+        val jwt = SignedJWT(header, JWTClaimsSet.parse(payload))
+
+        // Create a signer.
+        val signer = DefaultJWSSignerFactory().createJWSSigner(signingKey)
+
+        // Let the signer sign the credential JWT.
+        jwt.sign(signer)
+
+        // Return the signed credential JWT.
+        return jwt
+    }
+
+    private fun createCredentialJwtHeader(signingKey: JWK): JWSHeader {
+        // The signing algorithm.
+        val alg = JWSAlgorithm.parse(signingKey.getAlgorithm().getName())
+
+        // The key ID.
+        val kid = signingKey.getKeyID()
+
+        // Prepare the header part of a credential JWT. The header represents
+        // the following:
+        //
+        //   {
+        //      "alg": "<signing-algorithm>",
+        //      "kid": "<signing-key-id>",
+        //      "typ": "dc+sd-jwt"
+        //   }
+        //
+        // Note that the media type of SD-JWT has been changed from
+        // "application/vc+sd-jwt" to "application/dc+sd-jwt". For more details,
+        // please refer to the following.
+        //
+        //   https://datatracker.ietf.org/meeting/121/materials/slides-121-oauth-sessb-sd-jwt-and-sd-jwt-vc-02#page=51
+        //   https://github.com/oauth-wg/oauth-sd-jwt-vc/pull/268
+        //
+        return JWSHeader.Builder(alg).keyID(kid)
+            .type(JOSEObjectType("dc+sd-jwt"))
+            .build()
+    }
+
+    @Suppress("MagicNumber")
+    private fun createCredentialJwtPayload(
+        claims: MutableMap<String, Any>?, disclosableClaims: MutableList<Disclosure>?,
+    ): MutableMap<String?, Any?> {
+        // Create an SDObjectBuilder instance to prepare the payload part of
+        // a credential JWT. "sha-256" is used as a hash algorithm to compute
+        // digest values of Disclosures unless a different algorithm is
+        // specified by using the SDObjectBuilder(String algorithm) constructor.
+        val builder = SDObjectBuilder()
+
+        // vct
+        //
+        // The type of the verifiable credential. The SD-JWT VC specification
+        // requires this claim.
+        builder.putClaim("vct", "https://credentials.example.com/identity_credential")
+
+        // iss
+        //
+        // The identifier of the credential issuer. The SD-JWT VC specification
+        // requires this claim.
+        builder.putClaim("iss", BASE_URL)
+
+        // iat
+        //
+        // The issuance time of the verifiable credential. This claim is optional in
+        // the SD-JWT VC specification, but the HAIP specification requires this.
+        builder.putClaim("iat", System.currentTimeMillis() / 1000L)
+
+        builder.putClaim("exp", Date.from(Instant.now().plusSeconds(600)))
+
+        // Put claims, if any.
+        if (claims != null) {
+            // For each claim.
+            for (claim in claims.entries) {
+                // Add the claim.
+                builder.putClaim(claim.key, claim.value)
+            }
+        }
+
+        // Put disclosable claims, if any.
+        if (disclosableClaims != null) {
+            // For each disclosable claims.
+            for (claim in disclosableClaims) {
+                // Add the claim.
+                builder.putSDClaim(claim)
+            }
+        }
+
+        // Create a Map instance that represents the payload part of a
+        // credential JWT. The map contains the "_sd" array if disclosable
+        // claims have been given.
+        return builder.build()
+    }
+
+    private fun buildCnfForBindingKey(bindingKey: JWK): MutableMap<String?, Any?> {
+        // Embed the key as the value of the "jwk" property.
+        return mutableMapOf("jwk" to bindingKey.toJSONObject())
+    }
+
 }

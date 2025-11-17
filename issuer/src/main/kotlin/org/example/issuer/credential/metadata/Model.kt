@@ -5,27 +5,45 @@ import java.net.URI
 import java.net.URL
 
 data class IssuerMetadata(
-    @JsonProperty("credential_issuer")
+    @get:JsonProperty("credential_issuer")
     val credentialIssuer: String,
-    @JsonProperty("authorization_servers")
+    @get:JsonProperty("authorization_servers")
     val authorizationServers: Set<String>? = null,
-    @JsonProperty("credential_endpoint")
+    @get:JsonProperty("credential_endpoint")
     val credentialEndpoint: URL? = null,
-    @JsonProperty("batch_credential_endpoint")
+    @get:JsonProperty("batch_credential_endpoint")
     val batchCredentialEndpoint: URL? = null,
-    @JsonProperty("deferred_credential_endpoint")
+    @get:JsonProperty("deferred_credential_endpoint")
     val deferredCredentialEndpoint: URL? = null,
-    @JsonProperty("notification_endpoint")
+    @get:JsonProperty("notification_endpoint")
     val notificationEndpoint: URL? = null,
-    @JsonProperty("credential_response_encryption")
+    @get:JsonProperty("credential_response_encryption")
     val credentialResponseEncryption: CredentialResponseEncryption? = null,
-    @JsonProperty("credential_identifiers_supported")
+    @get:JsonProperty("credential_identifiers_supported")
     val credentialIdentifiersSupported: Boolean? = null,
-    @JsonProperty("credential_configurations_supported")
+    @get:JsonProperty("credential_configurations_supported")
     val credentialConfigurationsSupported: Map<String, CredentialConfigurationSupported>,
-    @JsonProperty("signed_metadata")
+    @get:JsonProperty("signed_metadata")
     val signedMetadata: String? = null,
     val display: Display? = null,
+)
+
+data class JwtVcIssuerMetadata(
+    val issuer: String,
+    val jwksUri: String? = null,
+    val jwks: JwksKeys? = null,
+)
+
+data class JwksKeys(
+    val keys: List<JwksKey>? = null,
+)
+
+data class JwksKey(
+    val kid: String,
+    val kty: String,
+    val crv: String,
+    val x: String,
+    val y: String,
 )
 
 data class CredentialConfigurationSupported(

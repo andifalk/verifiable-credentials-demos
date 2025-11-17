@@ -1,10 +1,13 @@
 package org.example.issuer.authorizationserver
 
+import com.nimbusds.jose.Algorithm
+import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.JWKSet
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet
 import com.nimbusds.jose.jwk.source.JWKSource
 import com.nimbusds.jose.proc.SecurityContext
+import org.example.issuer.common.IssuerConsts.BASE_URL
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
@@ -12,15 +15,15 @@ import org.springframework.http.MediaType
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration
 import org.springframework.security.config.annotation.web.configurers.ExceptionHandlingConfigurer
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.jwt.JwtDecoder
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.security.web.SecurityFilterChain
@@ -52,10 +55,14 @@ class AuthorizationServerConfig {
         http
             .securityMatcher(
                 "/.well-known/openid-credential-issuer/**",
+                "/.well-known/jwt-vc-issuer/**",
                 "/credential_offer/**",
                 "/error/**",
+                "/v3/api-docs/**",
+                "/swagger-ui.html",
+                "/swagger-ui/**",
             ).anonymous {}
-            .csrf { csrf -> csrf.disable() }
+            //.csrf { csrf -> csrf.disable() }
             .authorizeHttpRequests { authorize ->
                 authorize
                     .anyRequest()
@@ -69,7 +76,7 @@ class AuthorizationServerConfig {
     @Order(ORDER_CREDENTIAL)
     fun credentialSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .securityMatcher("/credential/**")
+            .securityMatcher("/credential/**", "/deferred_credential/**")
             .csrf { csrf -> csrf.disable() }
             .authorizeHttpRequests { authorize ->
                 authorize
@@ -83,17 +90,12 @@ class AuthorizationServerConfig {
     @Bean
     @Order(ORDER_AUTHORIZATION_SERVER)
     fun authorizationServerSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
-        val authorizationServerConfigurer =
-            OAuth2AuthorizationServerConfigurer.authorizationServer()
-
         http
-            .securityMatcher(authorizationServerConfigurer.endpointsMatcher)
-            .with(
-                authorizationServerConfigurer,
-            ) { authorizationServer: OAuth2AuthorizationServerConfigurer ->
+            .oauth2AuthorizationServer({ authorizationServer: OAuth2AuthorizationServerConfigurer ->
+                http.securityMatcher(authorizationServer.endpointsMatcher);
                 authorizationServer
-                    .oidc {}
-            } // Enable OpenID Connect 1.0
+                    .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
+            })
             .authorizeHttpRequests { authorize ->
                 authorize
                     .anyRequest()
@@ -161,6 +163,7 @@ class AuthorizationServerConfig {
                 .Builder(publicKey)
                 .privateKey(privateKey)
                 .keyID(UUID.randomUUID().toString())
+                .algorithm(JWSAlgorithm.RS256)
                 .build()
         } catch (ex: NoSuchAlgorithmException) {
             error(ex)
@@ -176,6 +179,6 @@ class AuthorizationServerConfig {
     fun authorizationServerSettings(): AuthorizationServerSettings =
         AuthorizationServerSettings
             .builder()
-            .issuer("http://localhost:8080")
+            .issuer(BASE_URL)
             .build()
 }
