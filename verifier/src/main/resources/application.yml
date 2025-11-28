@@ -3,3 +3,6 @@ spring:
     name: verifier
 server:
   port: 9092
+
+verifier:
+  wallet-url: http://localhost:8080

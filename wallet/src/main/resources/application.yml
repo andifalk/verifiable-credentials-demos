@@ -3,3 +3,13 @@ spring:
     name: wallet
 server:
   port: 8080
+
+issuer:
+  base-url: "http://localhost:9091" # default issuer app URL
+  auth-server:
+    authorization-uri: "http://localhost:9091/oauth2/authorize"
+    token-uri: "http://localhost:9091/oauth2/token"
+  client:
+    client-id: "demo-client"
+    client-secret: "secret"
+    redirect-uri: "http://localhost:8080/credentials/{id}/callback"

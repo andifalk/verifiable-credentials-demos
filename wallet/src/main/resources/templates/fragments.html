@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+</head>
+<body>
+<div th:fragment="header">
+    <header style="background:#2b6cb0;color:white;padding:12px;">
+        <div style="max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
+            <div>
+                <h1 style="margin:0;font-size:1.2rem;">Verifiable Wallet</h1>
+            </div>
+            <nav>
+                <a th:href="@{/}" style="color:white;margin-right:12px;">Home</a>
+                <a th:href="@{/credentials}" style="color:white;margin-right:12px;">Credentials</a>
+                <a th:href="@{/my-credentials}" style="color:white;">My Credentials</a>
+            </nav>
+        </div>
+    </header>
+</div>
+</body>
+</html>

@@ -30,5 +30,6 @@
     <module>issuer</module>
     <module>verifier</module>
     <module>wallet</module>
+    <module>selective-disclosure-demo</module>
   </modules>
 </project>

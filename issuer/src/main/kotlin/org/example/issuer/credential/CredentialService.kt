@@ -11,20 +11,43 @@ import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.annotation.PostConstruct
 import org.example.issuer.common.IssuerConsts.BASE_URL
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Service
 import tools.jackson.core.type.TypeReference
 import tools.jackson.databind.json.JsonMapper
 import java.net.URLDecoder
-import java.time.Instant
-import java.util.Date
+
+const val WALLET_KEY = ("{\n"
+        + "  \"kty\": \"EC\",\n"
+        + "  \"alg\": \"ES256\",\n"
+        + "  \"crv\": \"P-256\",\n"
+        + "  \"kid\": \"_M6jQowr-8V8myJ9xtXYPmHeYjd1VegmHTxj97vtmHA\",\n"
+        + "  \"x\": \"Yiij9HQqyvmSCGbq0walvnelHgIprmcJ0Ah4HzBjJqU\",\n"
+        + "  \"y\": \"D9VFlhQ5ZRNp2NWJbTp0UxhmEg0rsuRcmmbj_Iqo1s0\",\n"
+        + "  \"d\": \"FoV0kbTmPILo2qFU-4UokJW39e01iSUY4gmkVqzHloE\"\n"
+        + "}\n")
 
 @Service
 class CredentialService(
     private val rsaKey: RSAKey,
     private val jsonMapper: JsonMapper,
 ) {
+    private val log:KLogger = KotlinLogging.logger { CredentialService::class.simpleName }
+    private lateinit var walletKey: JWK
+
+    @PostConstruct
+    fun init() {
+        // Create a wallet key, which is to be embedded in the credential
+        // JWT and used for signing the key binding JWT.
+
+        // In production this should be loaded from a public wallet JWKS endpoint
+        walletKey = JWK.parse(WALLET_KEY)
+    }
+
     fun issueCredential(
         jwt: Jwt,
         request: CredentialRequest,
@@ -33,7 +56,7 @@ class CredentialService(
         val subject = jwt.subject
         var credentialId: String? = null
         if (jwt.hasClaim("authorization_details")) {
-            val detailsString = URLDecoder.decode(jwt.getClaim<String>("authorization_details"), "UTF-8")
+            val detailsString = URLDecoder.decode(jwt.getClaim("authorization_details"), "UTF-8")
 
             val authorizationDetails =
                 jsonMapper.readValue(detailsString, object : TypeReference<List<AuthorizationDetail>>() {})
@@ -58,37 +81,21 @@ class CredentialService(
             )
         val credentials = buildCredentialSubject(credentialId, subject)
 
-        // 2. Standard JWT claims
-        /*
-        val claims =
-            JWTClaimsSet
-                .Builder()
-                .issuer("http://localhost:8080")
-                .subject(subject)
-                .issueTime(Date.from(now))
-                .expirationTime(Date.from(now.plusSeconds(600)))
-                .claim("vc", vcClaims)
-                .jwtID(UUID.randomUUID().toString())
-                .build()
-
-        // 3. Sign it
-        val signer = RSASSASigner(rsaKey.toRSAPrivateKey())
-        val signedJWT =
-            SignedJWT(
-                JWSHeader
-                    .Builder(JWSAlgorithm.RS256)
-                    .keyID(rsaKey.keyID)
-                    .type(JOSEObjectType.JWT)
-                    .build(),
-                claims,
-            )
-        signedJWT.sign(signer)*/
+        log.info { "Credentials $credentials" }
 
         val disclosureList = credentials.map {
             Disclosure(it.key, it.value)
         }.toMutableList()
 
-        val credentialJwt = createCredentialJwt(vcClaims, disclosureList, rsaKey)
+        log.info { "Disclosures $disclosureList" }
+        disclosureList.stream().map {
+            log.info { "Disclosure [salt=${it.salt},claim=${it.claimName}, claimValue=${it.claimValue}, sd=${it.digest()}]" }
+        }
+
+        val credentialJwt = createCredentialJwt(vcClaims, disclosureList, rsaKey, walletKey)
+
+        log.info { "Credential JWT $credentialJwt" }
+
         return SDJWT(credentialJwt.serialize(), disclosureList).toString()
     }
 
@@ -145,15 +152,15 @@ class CredentialService(
         }
 
     private fun createCredentialJwt(
-        claims: MutableMap<String, Any>?, disclosableClaims: MutableList<Disclosure>?,
-        signingKey: JWK,
+        claims: MutableMap<String, Any>, disclosableClaims: MutableList<Disclosure>,
+        signingKey: JWK, bindingKey: JWK,
     ): SignedJWT {
         // Create the header part of a credential JWT.
         val header: JWSHeader = createCredentialJwtHeader(signingKey)
 
         // Create the payload part of a credential JWT.
-        val payload: MutableMap<String?, Any?> =
-            createCredentialJwtPayload(claims, disclosableClaims)
+        val payload: MutableMap<String, Any> =
+            createCredentialJwtPayload(claims, disclosableClaims, bindingKey)
 
         // Create a credential JWT. (not signed yet)
         val jwt = SignedJWT(header, JWTClaimsSet.parse(payload))
@@ -170,10 +177,10 @@ class CredentialService(
 
     private fun createCredentialJwtHeader(signingKey: JWK): JWSHeader {
         // The signing algorithm.
-        val alg = JWSAlgorithm.parse(signingKey.getAlgorithm().getName())
+        val alg = JWSAlgorithm.parse(signingKey.algorithm.name)
 
         // The key ID.
-        val kid = signingKey.getKeyID()
+        val kid = signingKey.keyID
 
         // Prepare the header part of a credential JWT. The header represents
         // the following:
@@ -198,8 +205,8 @@ class CredentialService(
 
     @Suppress("MagicNumber")
     private fun createCredentialJwtPayload(
-        claims: MutableMap<String, Any>?, disclosableClaims: MutableList<Disclosure>?,
-    ): MutableMap<String?, Any?> {
+        claims: MutableMap<String, Any>, disclosableClaims: MutableList<Disclosure>, bindingKey: JWK
+    ): MutableMap<String, Any> {
         // Create an SDObjectBuilder instance to prepare the payload part of
         // a credential JWT. "sha-256" is used as a hash algorithm to compute
         // digest values of Disclosures unless a different algorithm is
@@ -224,25 +231,28 @@ class CredentialService(
         // the SD-JWT VC specification, but the HAIP specification requires this.
         builder.putClaim("iat", System.currentTimeMillis() / 1000L)
 
-        builder.putClaim("exp", Date.from(Instant.now().plusSeconds(600)))
 
-        // Put claims, if any.
-        if (claims != null) {
-            // For each claim.
-            for (claim in claims.entries) {
-                // Add the claim.
-                builder.putClaim(claim.key, claim.value)
-            }
+        // cnf
+        //
+        // The binding key. This claim is optional in the SD-JWT VC specification,
+        // but the HAIP specification requires this.
+        builder.putClaim("cnf", buildCnfForBindingKey(bindingKey))
+
+        // For each claim.
+        for (claim in claims.entries) {
+            // Add the claim.
+            builder.putClaim(claim.key, claim.value)
         }
+
 
         // Put disclosable claims, if any.
-        if (disclosableClaims != null) {
-            // For each disclosable claims.
-            for (claim in disclosableClaims) {
-                // Add the claim.
-                builder.putSDClaim(claim)
-            }
+
+        // For each disclosable claims.
+        for (claim in disclosableClaims) {
+            // Add the claim.
+            builder.putSDClaim(claim)
         }
+
 
         // Create a Map instance that represents the payload part of a
         // credential JWT. The map contains the "_sd" array if disclosable
@@ -250,9 +260,9 @@ class CredentialService(
         return builder.build()
     }
 
-    private fun buildCnfForBindingKey(bindingKey: JWK): MutableMap<String?, Any?> {
+    private fun buildCnfForBindingKey(bindingKey: JWK): MutableMap<String, Any> {
         // Embed the key as the value of the "jwk" property.
-        return mutableMapOf("jwk" to bindingKey.toJSONObject())
+        return mutableMapOf("jwk" to bindingKey.toPublicJWK().toJSONObject())
     }
 
 }

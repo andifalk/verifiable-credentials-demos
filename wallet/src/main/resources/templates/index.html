@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Available Issuers</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+<div th:replace="~{fragments :: header}"></div>
+
+<div style="max-width:1000px;margin:20px auto;">
+    <h1>Available Issuers</h1>
+
+    <div th:if="${error != null}">
+        <p class="error">Error fetching issuer info: <span th:text="${error}">error</span></p>
+    </div>
+
+    <div th:if="${offer == null}">
+        <p>No issuer information available.</p>
+    </div>
+
+    <div th:if="${offer != null}">
+        <p><strong>Issuer:</strong> <span th:text="${offer.credentialIssuer}">issuer</span></p>
+
+        <h2>Credentials</h2>
+        <ul>
+            <li th:each="id : ${offer.credentialConfigurationIds}">
+                <a th:href="@{/credentials/{id}(id=${id})}" th:text="${id}">credential</a>
+            </li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>

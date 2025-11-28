@@ -20,16 +20,20 @@ class ClientRegistrationConfiguration {
                 .withId(UUID.randomUUID().toString())
                 .clientId("demo-client")
                 .clientSecret(passwordEncoder.encode("secret"))
-                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .redirectUri("http://127.0.0.1:4200/callback") // adjust as needed
+                .redirectUri("http://localhost:8080/credentials/DigitalIDCredential/callback")
+                .redirectUri("http://localhost:8080/credentials/UniversityDegreeCredential/callback")
+                .redirectUri("http://localhost:8080/credentials/DriversLicenseCredential/callback")
+                .redirectUri("http://127.0.0.1:4200/callback")
                 .scope("openid")
                 .scope("vc_issuance")
                 .clientSettings(
                     ClientSettings
                         .builder()
-                        .requireProofKey(true)
+                        .requireProofKey(false)
                         .requireAuthorizationConsent(false)
                         .build(),
                 ).build()

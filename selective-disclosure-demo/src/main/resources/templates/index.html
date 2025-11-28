@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <title>Selective Disclosure Demo</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+<div th:replace="~{fragments :: header}"></div>
+
+<div style="max-width:1000px;margin:20px auto;">
+    <h1>Raw Issuer Credentials</h1>
+
+    <div th:if="${identityCredential != null}">
+        <h2>Credentials</h2>
+        <p><span style="white-space: pre-line" th:text="${identityCredential}">credential</span></p>
+    </div>
+</div>
+</body>
+</html>

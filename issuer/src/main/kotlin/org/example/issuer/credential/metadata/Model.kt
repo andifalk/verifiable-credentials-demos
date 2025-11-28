@@ -49,26 +49,26 @@ data class JwksKey(
 data class CredentialConfigurationSupported(
     val format: String,
     val scope: String? = null,
-    @JsonProperty("cryptographic_binding_methods_supported")
+    @param:JsonProperty("cryptographic_binding_methods_supported")
     val cryptographicBindingMethodsSupported: Set<String>? = null,
-    @JsonProperty("cryptographic_signing_alg_values_supported")
+    @param:JsonProperty("cryptographic_signing_alg_values_supported")
     val credentialSigningAlgValuesSupported: Set<String>? = null,
-    @JsonProperty("proof_types_supported")
+    @param:JsonProperty("proof_types_supported")
     val proofTypesSupported: Map<String, ProofTypeSupported>? = null,
     val display: CredentialDisplay? = null,
 )
 
 data class CredentialResponseEncryption(
-    @JsonProperty("alg_values_supported")
+    @param:JsonProperty("alg_values_supported")
     val algValuesSupported: Set<String>,
-    @JsonProperty("enc_values_supported")
+    @param:JsonProperty("enc_values_supported")
     val encValuesSupported: Set<String>,
-    @JsonProperty("encryption_required")
+    @param:JsonProperty("encryption_required")
     val encryptionRequired: Boolean,
 )
 
 data class ProofTypeSupported(
-    @JsonProperty("proof_signing_alg_values_supported:")
+    @param:JsonProperty("proof_signing_alg_values_supported:")
     val proofSigningAlgValuesSupported: Set<String>,
 )
 
@@ -77,11 +77,11 @@ data class Display(
     val locale: String?,
     val logo: Logo?,
     val description: String?,
-    @JsonProperty("background_color")
+    @param:JsonProperty("background_color")
     val backgroundColor: String?,
-    @JsonProperty("text_color")
+    @param:JsonProperty("text_color")
     val textColor: String?,
-    @JsonProperty("background_image")
+    @param:JsonProperty("background_image")
     val backgroundImage: BackgroundImage?,
 )
 
@@ -90,11 +90,11 @@ data class CredentialDisplay(
     val locale: String?,
     val logo: Logo?,
     val description: String?,
-    @JsonProperty("background_color")
+    @param:JsonProperty("background_color")
     val backgroundColor: String?,
-    @JsonProperty("text_color")
+    @param:JsonProperty("text_color")
     val textColor: String?,
-    @JsonProperty("background_image")
+    @param:JsonProperty("background_image")
     val backgroundImage: BackgroundImage?,
 )
 
@@ -104,6 +104,6 @@ data class BackgroundImage(
 
 data class Logo(
     val uri: URI,
-    @JsonProperty("alt_text")
+    @param:JsonProperty("alt_text")
     val altText: String?,
 )
