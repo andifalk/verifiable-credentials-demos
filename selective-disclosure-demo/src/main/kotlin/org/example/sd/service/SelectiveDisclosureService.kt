@@ -24,12 +24,14 @@ import java.security.KeyPairGenerator
 import java.security.NoSuchAlgorithmException
 import java.security.interfaces.ECPrivateKey
 import java.security.interfaces.ECPublicKey
+import java.util.Base64
 import java.util.UUID
 
 const val ISSUER_URL = "https://issuer.example.com"
 
+@Suppress("TooManyFunctions")
 @Service
-class SelectiveDisclosureService() {
+class SelectiveDisclosureService {
     private lateinit var issuerKey: JWK
     private lateinit var walletKey: JWK
     private lateinit var jsonMapper: JsonMapper
@@ -92,6 +94,10 @@ class SelectiveDisclosureService() {
 
     fun serializeSdJwt(sdJwt: SDJWT): String {
         return sdJwt.toString()
+    }
+
+    fun base64Decode(value: String): String {
+        return Base64.getUrlDecoder().decode(value).toString(Charsets.UTF_8)
     }
 
     fun createCredentialJwt(
