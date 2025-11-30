@@ -37,6 +37,23 @@ class SelectiveDisclosureController(private val selectiveDisclosureService: Sele
         return "credentials"
     }
 
+    @GetMapping("/presentation")
+    fun presentation(model: Model): String {
+        val identityCredential = selectiveDisclosureService.createIdentityCredential()
+        val undisclosedFields = selectiveDisclosureService.undisclosedFields(identityCredential)
+        val disclosedFields = selectiveDisclosureService.discloseFields(identityCredential)
+        val credentialJwt = selectiveDisclosureService.createCredentialJwt(undisclosedFields, disclosedFields)
+        val sdJwt = selectiveDisclosureService.createSdJwt(undisclosedFields, disclosedFields)
+        val disclosuresString = sdJwt.disclosures.stream().map { "~$it" }.collect(Collectors.joining())
+        model.addAttribute("rawCredentials", selectiveDisclosureService.serialize(identityCredential))
+        model.addAttribute("undisclosedFields", undisclosedFields)
+        model.addAttribute("disclosedFields", disclosedFields)
+        model.addAttribute("credentialJwt", credentialJwt)
+        model.addAttribute("sdJwt", sdJwt)
+        model.addAttribute("sdJwtDisclosures", disclosuresString)
+        return "presentation"
+    }
+
     @ModelAttribute("identityCredential")
     fun identityCredential(): String {
         return selectiveDisclosureService.serialize(selectiveDisclosureService.createIdentityCredential())
