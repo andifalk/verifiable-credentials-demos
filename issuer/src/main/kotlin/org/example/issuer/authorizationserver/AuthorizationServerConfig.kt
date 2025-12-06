@@ -62,7 +62,7 @@ class AuthorizationServerConfig {
                 "/swagger-ui.html",
                 "/swagger-ui/**",
             ).anonymous {}
-            //.csrf { csrf -> csrf.disable() }
+            // .csrf { csrf -> csrf.disable() }
             .authorizeHttpRequests { authorize ->
                 authorize
                     .anyRequest()
@@ -92,9 +92,9 @@ class AuthorizationServerConfig {
     fun authorizationServerSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .oauth2AuthorizationServer({ authorizationServer: OAuth2AuthorizationServerConfigurer ->
-                http.securityMatcher(authorizationServer.endpointsMatcher);
+                http.securityMatcher(authorizationServer.endpointsMatcher)
                 authorizationServer
-                    .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
+                    .oidc(Customizer.withDefaults()); // Enable OpenID Connect 1.0
             })
             .authorizeHttpRequests { authorize ->
                 authorize

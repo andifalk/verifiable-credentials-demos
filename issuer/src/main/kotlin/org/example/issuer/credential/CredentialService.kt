@@ -21,22 +21,24 @@ import tools.jackson.core.type.TypeReference
 import tools.jackson.databind.json.JsonMapper
 import java.net.URLDecoder
 
-const val WALLET_KEY = ("{\n"
-        + "  \"kty\": \"EC\",\n"
-        + "  \"alg\": \"ES256\",\n"
-        + "  \"crv\": \"P-256\",\n"
-        + "  \"kid\": \"_M6jQowr-8V8myJ9xtXYPmHeYjd1VegmHTxj97vtmHA\",\n"
-        + "  \"x\": \"Yiij9HQqyvmSCGbq0walvnelHgIprmcJ0Ah4HzBjJqU\",\n"
-        + "  \"y\": \"D9VFlhQ5ZRNp2NWJbTp0UxhmEg0rsuRcmmbj_Iqo1s0\",\n"
-        + "  \"d\": \"FoV0kbTmPILo2qFU-4UokJW39e01iSUY4gmkVqzHloE\"\n"
-        + "}\n")
+const val WALLET_KEY = (
+    "{\n" +
+        "  \"kty\": \"EC\",\n" +
+        "  \"alg\": \"ES256\",\n" +
+        "  \"crv\": \"P-256\",\n" +
+        "  \"kid\": \"_M6jQowr-8V8myJ9xtXYPmHeYjd1VegmHTxj97vtmHA\",\n" +
+        "  \"x\": \"Yiij9HQqyvmSCGbq0walvnelHgIprmcJ0Ah4HzBjJqU\",\n" +
+        "  \"y\": \"D9VFlhQ5ZRNp2NWJbTp0UxhmEg0rsuRcmmbj_Iqo1s0\",\n" +
+        "  \"d\": \"FoV0kbTmPILo2qFU-4UokJW39e01iSUY4gmkVqzHloE\"\n" +
+        "}\n"
+)
 
 @Service
 class CredentialService(
     private val rsaKey: RSAKey,
     private val jsonMapper: JsonMapper,
 ) {
-    private val log:KLogger = KotlinLogging.logger { CredentialService::class.simpleName }
+    private val log: KLogger = KotlinLogging.logger { CredentialService::class.simpleName }
     private lateinit var walletKey: JWK
 
     @PostConstruct
@@ -83,9 +85,11 @@ class CredentialService(
 
         log.info { "Credentials $credentials" }
 
-        val disclosureList = credentials.map {
-            Disclosure(it.key, it.value)
-        }.toMutableList()
+        val disclosureList =
+            credentials
+                .map {
+                    Disclosure(it.key, it.value)
+                }.toMutableList()
 
         log.info { "Disclosures $disclosureList" }
         disclosureList.stream().map {
@@ -104,7 +108,7 @@ class CredentialService(
         subject: String,
     ): Map<String, Any> =
         when (identifier) {
-            "UniversityDegreeCredential" ->
+            "UniversityDegreeCredential" -> {
                 mapOf(
                     "id" to subject,
                     "name" to "Alice Schmidt",
@@ -116,8 +120,9 @@ class CredentialService(
                             "awarded" to "2020-07-15",
                         ),
                 )
+            }
 
-            "DigitalIDCredential" ->
+            "DigitalIDCredential" -> {
                 mapOf(
                     "id" to subject,
                     "given_name" to "Alice",
@@ -127,8 +132,9 @@ class CredentialService(
                     "nationality" to "DE",
                     "document_type" to "national_id_card",
                 )
+            }
 
-            "BankAccountCredential" ->
+            "BankAccountCredential" -> {
                 mapOf(
                     "id" to subject,
                     "account_holder" to "Alice Schmidt",
@@ -137,8 +143,9 @@ class CredentialService(
                     "bank" to "Commerzbank",
                     "account_type" to "checking",
                 )
+            }
 
-            "DriversLicenseCredential" ->
+            "DriversLicenseCredential" -> {
                 mapOf(
                     "id" to subject,
                     "account_holder" to "Alice Schmidt",
@@ -147,13 +154,18 @@ class CredentialService(
                     "bank" to "Commerzbank",
                     "account_type" to "checking",
                 )
+            }
 
-            else -> throw IllegalArgumentException("Unsupported credential type: $identifier")
+            else -> {
+                throw IllegalArgumentException("Unsupported credential type: $identifier")
+            }
         }
 
     private fun createCredentialJwt(
-        claims: MutableMap<String, Any>, disclosableClaims: MutableList<Disclosure>,
-        signingKey: JWK, bindingKey: JWK,
+        claims: MutableMap<String, Any>,
+        disclosableClaims: MutableList<Disclosure>,
+        signingKey: JWK,
+        bindingKey: JWK,
     ): SignedJWT {
         // Create the header part of a credential JWT.
         val header: JWSHeader = createCredentialJwtHeader(signingKey)
@@ -198,14 +210,18 @@ class CredentialService(
         //   https://datatracker.ietf.org/meeting/121/materials/slides-121-oauth-sessb-sd-jwt-and-sd-jwt-vc-02#page=51
         //   https://github.com/oauth-wg/oauth-sd-jwt-vc/pull/268
         //
-        return JWSHeader.Builder(alg).keyID(kid)
+        return JWSHeader
+            .Builder(alg)
+            .keyID(kid)
             .type(JOSEObjectType("dc+sd-jwt"))
             .build()
     }
 
     @Suppress("MagicNumber")
     private fun createCredentialJwtPayload(
-        claims: MutableMap<String, Any>, disclosableClaims: MutableList<Disclosure>, bindingKey: JWK
+        claims: MutableMap<String, Any>,
+        disclosableClaims: MutableList<Disclosure>,
+        bindingKey: JWK,
     ): MutableMap<String, Any> {
         // Create an SDObjectBuilder instance to prepare the payload part of
         // a credential JWT. "sha-256" is used as a hash algorithm to compute
@@ -231,7 +247,6 @@ class CredentialService(
         // the SD-JWT VC specification, but the HAIP specification requires this.
         builder.putClaim("iat", System.currentTimeMillis() / 1000L)
 
-
         // cnf
         //
         // The binding key. This claim is optional in the SD-JWT VC specification,
@@ -244,7 +259,6 @@ class CredentialService(
             builder.putClaim(claim.key, claim.value)
         }
 
-
         // Put disclosable claims, if any.
 
         // For each disclosable claims.
@@ -252,7 +266,6 @@ class CredentialService(
             // Add the claim.
             builder.putSDClaim(claim)
         }
-
 
         // Create a Map instance that represents the payload part of a
         // credential JWT. The map contains the "_sd" array if disclosable
@@ -264,5 +277,4 @@ class CredentialService(
         // Embed the key as the value of the "jwk" property.
         return mutableMapOf("jwk" to bindingKey.toPublicJWK().toJSONObject())
     }
-
 }

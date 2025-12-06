@@ -14,113 +14,76 @@
 
 <div class="container-fluid">
     <h1>Verifiable Presentation</h1>
+    <h2>Age Verification</h2>
 
     <div class="accordion" id="verifiablePresentation">
 
-        <div th:if="${undisclosedFields != null}">
+        <div th:if="${presentationSdJwt != null}">
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                             data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                        Undisclosed Claims
+                        Presentation JWT
                     </button>
                 </h2>
-                <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#verifiablePresentation">
-                    <div class="accordion-body" style="white-space: break-spaces" th:text="${undisclosedFields}">
-                    </div>
-                </div>
-            </div>
+                <div id="collapseOne" class="accordion-collapse collapse"
+                     data-bs-parent="#verifiablePresentation">
+                    <div class="accordion-body">
+                        <h3>Credential</h3>
+                        <p><span style="white-space: break-spaces; line-break: normal"
+                                 th:text="${presentationSdJwt.getCredentialJwt()}">credential</span></p>
+                        <p><span style="white-space: break-spaces; line-break: normal"
+                                 th:text="${@selectiveDisclosureService.getPresentationCredentialDecoded()}">credential (decoded)</span>
+                        </p>
 
-            <hr>
-
-            <div th:if="${disclosedFields != null}">
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                            Disclosed Claims
-                        </button>
-                    </h2>
-                    <div id="collapseTwo" class="accordion-collapse collapse show"
-                         data-bs-parent="#verifiablePresentation">
-                        <div class="accordion-body">
-                            <table class="table table-striped">
-                                <tr>
-                                    <th>Salt</th>
-                                    <th>Claim</th>
-                                    <th>Claim Value</th>
-                                    <th>Digest / SHA-256(Disclosure)</th>
-                                    <th>Disclosure / Base64Url([salt,claim,value])</th>
-                                </tr>
-                                <tr th:each="disclosed : ${disclosedFields}">
-                                    <td th:text="${disclosed.getSalt()}"></td>
-                                    <td th:text="${disclosed.getClaimName()}"></td>
-                                    <td th:text="${disclosed.getClaimValue()}"></td>
-                                    <td style="color: #c53030" th:text="${disclosed.digest()}"></td>
-                                    <td style="color: green" th:text="${disclosed}"></td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <hr>
-
-            <div th:if="${credentialJwt != null}">
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#collapseThree" aria-expanded="true" aria-controls="collapseThree">
-                            CredentialJWT
-                        </button>
-                    </h2>
-                    <div id="collapseThree" class="accordion-collapse collapse show"
-                         data-bs-parent="#verifiablePresentation">
-                        <div class="accordion-body">
-                            <h3>Header</h3>
-                            <p><span style="white-space: break-spaces; line-break: normal"
-                                     th:text="${credentialJwt.getHeader().toJSONObject()}">credential</span></p>
-                            <h3>Payload</h3>
-                            <p><span style="white-space: collapse; line-break: normal; color: #c53030"
-                                     th:text="${credentialJwt.getJWTClaimsSet().toJSONObject()}">credential</span></p>
-                            <h3>Disclosures</h3>
-                            <p><span style="white-space: break-spaces; line-break: normal"
-                                     th:text="${disclosedFields}">credential</span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <hr>
-
-                <div th:if="${sdJwt != null}">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#collapseFour" aria-expanded="true" aria-controls="collapseFour">
-                                SD-JWT
-                            </button>
-                        </h2>
-                        <div id="collapseFour" class="accordion-collapse collapse show"
-                             data-bs-parent="#verifiablePresentation">
-                            <div class="accordion-body">
-                                <h3>Credential JWT</h3>
-                                <p><span style="white-space: wrap; line-break: anywhere"
-                                         th:text="${sdJwt.getCredentialJwt()}">credential</span></p>
-                                <h3>Disclosures</h3>
-                                <p><span style="white-space: wrap; line-break: anywhere; color: green"
-                                         th:text="${sdJwtDisclosures}">credential</span>
-                                </p>
-                                <h3>SD JWT</h3>
-                                <p><span style="white-space: wrap; line-break: anywhere"
-                                         th:text="${sdJwt.toString()}">credential</span>
-                                </p>
-                            </div>
-                        </div>
+                        <h3>Disclosures</h3>
+                        <ul th:each="disclosed : ${presentationSdJwt.getDisclosures()}">
+                            <li th:utext="${disclosed} + '</br> Decoded:' + ${@selectiveDisclosureService.base64Decode(disclosed.getDisclosure())} + '</br> Salted Digest:' + ${disclosed.digest()}"></li>
+                        </ul>
+                        <h3>Binding</h3>
+                        <p><span style="white-space: break-spaces; line-break: auto"
+                                 th:text="${presentationSdJwt.getBindingJwt()}">binding</span></p>
+                        <p><span style="white-space: break-spaces; line-break: normal"
+                                 th:text="${@selectiveDisclosureService.getPresentationBindingDecoded()}">binding (decoded)</span>
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
+
+        <hr>
+
+        <div th:if="${serializedPresentationSdJwt != null}">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        SD-JWT
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse"
+                     data-bs-parent="#verifiablePresentation">
+                    <div class="accordion-body">
+                        <h3>Presentation SD-JWT</h3>
+                        <p><span style="white-space: wrap; line-break: anywhere"
+                                 th:text="${serializedPresentationSdJwt}">presentation</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <div>
+            <h3>Age Verification Check</h3>
+            <div th:if="${age_verification}" style="color: green">Verified: User is older than 18
+                years
+            </div>
+            <div th:unless="${age_verification}" style="color: red">User is not older than 18
+                years!
+            </div>
+        </div>
+
     </div>
 </div>
 </body>

@@ -56,7 +56,7 @@ data class CredentialResponse(
 )
 
 data class Credential(
-    val credential: String
+    val credential: String,
 )
 
 enum class ProofType(
