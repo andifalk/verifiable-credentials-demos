@@ -1,0 +1,77 @@
+### Reject an unknown credential profile
+POST {{verifierUrl}}/api/presentations/unknown
+Accept: application/json
+
+> {%
+  client.test("Unknown profile is rejected", function () {
+    client.assert(response.status === 400, "Expected HTTP 400");
+    client.assert(response.body.error === "invalid_request", "Unexpected error");
+  });
+%}
+
+### Reject an unknown transaction
+GET {{verifierUrl}}/api/presentations/not-a-transaction
+Accept: application/json
+
+> {%
+  client.test("Unknown transaction is rejected", function () {
+    client.assert(response.status === 400, "Expected HTTP 400");
+  });
+%}
+
+### Create a transaction used by the malformed direct-post test
+POST {{verifierUrl}}/api/presentations/personal_id
+Accept: application/json
+
+> {%
+  client.global.set("invalidTransactionId", response.body.transaction_id);
+%}
+
+### Capture its state
+GET {{verifierUrl}}/api/presentations/{{invalidTransactionId}}/request
+Accept: application/json
+
+> {%
+  client.global.set("invalidState", response.body.state);
+%}
+
+### Reject a malformed vp_token and mark the transaction failed
+POST {{verifierUrl}}/oid4vp/response
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+state={{invalidState}}&vp_token={"personal_id":[]}
+
+> {%
+  client.test("Malformed presentation is rejected", function () {
+    client.assert(response.status === 400, "Expected HTTP 400");
+    client.assert(response.body.error === "invalid_request", "Unexpected error");
+  });
+%}
+
+### Inspect the failed transaction
+GET {{verifierUrl}}/api/presentations/{{invalidTransactionId}}
+Accept: application/json
+
+> {%
+  client.test("Transaction records verification failure", function () {
+    client.assert(response.status === 200, "Expected HTTP 200");
+    client.assert(response.body.status === "failed", "Expected failed status");
+    client.assert(response.body.error, "Expected a failure description");
+  });
+%}
+
+### Reject reuse of an already consumed state
+POST {{verifierUrl}}/oid4vp/response
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+state={{invalidState}}&vp_token={"personal_id":[]}
+
+> {%
+  client.test("Consumed state cannot be reused", function () {
+    client.assert(response.status === 400, "Expected HTTP 400");
+    client.assert(response.body.error_description.includes("already used"), "Unexpected error description");
+  });
+%}
+

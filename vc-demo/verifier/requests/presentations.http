@@ -1,0 +1,76 @@
+### Create a personal ID presentation transaction
+POST {{verifierUrl}}/api/presentations/personal_id
+Accept: application/json
+
+> {%
+  client.test("Personal ID transaction was created", function () {
+    client.assert(response.status === 200, "Expected HTTP 200");
+    client.assert(response.body.authorization_request_uri.startsWith("openid4vp://"), "Missing authorization URI");
+  });
+  client.global.set("personalIdTransactionId", response.body.transaction_id);
+%}
+
+### Get the personal ID authorization request
+GET {{verifierUrl}}/api/presentations/{{personalIdTransactionId}}/request
+Accept: application/json
+
+> {%
+  client.test("Authorization request uses OID4VP direct_post", function () {
+    client.assert(response.status === 200, "Expected HTTP 200");
+    client.assert(response.body.response_type === "vp_token", "Unexpected response type");
+    client.assert(response.body.response_mode === "direct_post", "Unexpected response mode");
+  });
+  client.global.set("personalIdState", response.body.state);
+%}
+
+### Get the personal ID transaction result (initially pending)
+GET {{verifierUrl}}/api/presentations/{{personalIdTransactionId}}
+Accept: application/json
+
+> {%
+  client.test("Presentation result is available", function () {
+    client.assert(response.status === 200, "Expected HTTP 200");
+    client.assert(["pending", "verified", "failed"].includes(response.body.status), "Unexpected status");
+  });
+%}
+
+### Create a university diploma presentation transaction
+POST {{verifierUrl}}/api/presentations/university_diploma
+Accept: application/json
+
+> {%
+  client.global.set("universityDiplomaTransactionId", response.body.transaction_id);
+%}
+
+### Get the university diploma authorization request
+GET {{verifierUrl}}/api/presentations/{{universityDiplomaTransactionId}}/request
+Accept: application/json
+
+> {%
+  client.global.set("universityDiplomaState", response.body.state);
+%}
+
+### Get the university diploma transaction result
+GET {{verifierUrl}}/api/presentations/{{universityDiplomaTransactionId}}
+Accept: application/json
+
+### Create a driver's license presentation transaction
+POST {{verifierUrl}}/api/presentations/drivers_license
+Accept: application/json
+
+> {%
+  client.global.set("driversLicenseTransactionId", response.body.transaction_id);
+%}
+
+### Get the driver's license authorization request
+GET {{verifierUrl}}/api/presentations/{{driversLicenseTransactionId}}/request
+Accept: application/json
+
+> {%
+  client.global.set("driversLicenseState", response.body.state);
+%}
+
+### Get the driver's license transaction result
+GET {{verifierUrl}}/api/presentations/{{driversLicenseTransactionId}}
+Accept: application/json
+

@@ -27,9 +27,9 @@
   </build>
 
   <modules>
-    <module>issuer</module>
-    <module>verifier</module>
-    <module>wallet</module>
+    <module>vc-demo/issuer</module>
+    <module>vc-demo/verifier</module>
+    <module>vc-demo/wallet</module>
     <module>selective-disclosure-demo</module>
   </modules>
 </project>

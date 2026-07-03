@@ -1,0 +1,32 @@
+# Run the create and authorization-request calls in presentations.http first.
+# Replace the presentation values in http-client.env.json with SD-JWT+KB values
+# produced for the nonce and audience in the corresponding authorization request.
+
+### Submit a personal ID presentation
+POST {{verifierUrl}}/oid4vp/response
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+state={{personalIdState}}&vp_token={"personal_id":["{{personalIdPresentation}}"]}
+
+> {%
+  client.test("Personal ID presentation was accepted", function () {
+    client.assert(response.status === 200, "Expected HTTP 200");
+    client.assert(response.body.redirect_uri, "redirect_uri is missing");
+  });
+%}
+
+### Submit a university diploma presentation
+POST {{verifierUrl}}/oid4vp/response
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+state={{universityDiplomaState}}&vp_token={"university_diploma":["{{universityDiplomaPresentation}}"]}
+
+### Submit a driver's license presentation
+POST {{verifierUrl}}/oid4vp/response
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+state={{driversLicenseState}}&vp_token={"drivers_license":["{{driversLicensePresentation}}"]}
+

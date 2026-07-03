@@ -1,0 +1,21 @@
+### Application health
+GET {{verifierUrl}}/actuator/health
+Accept: application/json
+
+> {%
+  client.test("Application is healthy", function () {
+    client.assert(response.status === 200, "Expected HTTP 200");
+    client.assert(response.body.status === "UP", "Application is not UP");
+  });
+%}
+
+### Application info
+GET {{verifierUrl}}/actuator/info
+Accept: application/json
+
+> {%
+  client.test("Info endpoint is available", function () {
+    client.assert(response.status === 200, "Expected HTTP 200");
+  });
+%}
+

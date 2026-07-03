@@ -13,21 +13,22 @@ Quick overview
 
 Structure and modules
 
-- `issuer/` — Issuer Spring Boot app
-    - Implements credential offer endpoints and the issuance flow (callback handling, token exchange, POST
+- `vc-demo/` - Complete demo with issuer, wallet and verifier
+    - `issuer/` — Issuer Spring Boot app
+        - Implements credential offer endpoints and the issuance flow (callback handling, token exchange, POST
       `/credential`) following OpenID for VC Issuance patterns.
-    - Exposes endpoints used by wallets to fetch available credential offers and to request credentials.
-    - Useful for running a local issuer during demos and tests.
+        - Exposes endpoints used by wallets to fetch available credential offers and to request credentials.
+        - Useful for running a local issuer during demos and tests.
 
-- `verifier/` — Verifier Spring Boot app
-    - Demonstrates verifying verifiable presentations using OpenID for Verifiable Presentations flows.
-    - Contains example verification logic (for demo scenarios such as age checks).
+    - `verifier/` — Verifier Spring Boot app
+        - Demonstrates verifying verifiable presentations using OpenID for Verifiable Presentations flows.
+        - Contains example verification logic (for demo scenarios such as age checks).
 
-- `wallet/` — Wallet (holder) Spring Boot app
-    - A simple holder application that stores issued credentials and can start issuance flows against the `issuer` app.
-    - Includes Thymeleaf-driven UI pages: list of available offers, credential details, and a "My Credentials" page with
+    - `wallet/` — Wallet (holder) Spring Boot app
+        - A simple holder application that stores issued credentials and can start issuance flows against the `issuer` app.
+        - Includes Thymeleaf-driven UI pages: list of available offers, credential details, and a "My Credentials" page with
       persisted issued credentials (in-memory by default).
-    - Implements the OAuth2 authorization code flow callback and token exchange, posts authorization to `/credential` to
+        - Implements the OAuth2 authorization code flow callback and token exchange, posts authorization to `/credential` to
       complete issuance.
 
 - `selective-disclosure-demo/` — Selective disclosure demo module

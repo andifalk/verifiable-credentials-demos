@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>VC Demo Wallet</title>
+    <link rel="stylesheet" th:href="@{/wallet.css}">
+</head>
+<body>
+<header class="hero">
+    <div>
+        <p class="eyebrow">OID4VCI 1.0 + OID4VP 1.0</p>
+        <h1>Verifiable Credential Wallet</h1>
+        <p>Issue SD-JWT credentials from the demo issuer and present selected claims to the verifier.</p>
+    </div>
+    <div class="status-panel">
+        <span>
+            <span class="app-name">Issuer</span>
+            <span class="app-meta">
+                <strong th:text="${health.issuer().port()}">:8080</strong>
+                <span th:classappend="${health.issuer().up()} ? ' up' : ' down'"
+                      class="health-indicator"
+                      th:attr="title=${health.issuer().up()} ? 'Issuer health check passed' : 'Issuer health check failed'"
+                      th:text="${health.issuer().up()} ? '✓' : '✕'">✓</span>
+            </span>
+        </span>
+        <span>
+            <span class="app-name">Verifier</span>
+            <span class="app-meta">
+                <strong th:text="${health.verifier().port()}">:8081</strong>
+                <span th:classappend="${health.verifier().up()} ? ' up' : ' down'"
+                      class="health-indicator"
+                      th:attr="title=${health.verifier().up()} ? 'Verifier health check passed' : 'Verifier health check failed'"
+                      th:text="${health.verifier().up()} ? '✓' : '✕'">✓</span>
+            </span>
+        </span>
+        <span>
+            <span class="app-name">Wallet</span>
+            <span class="app-meta">
+                <strong th:text="${health.wallet().port()}">:8082</strong>
+                <span class="health-indicator up" title="Wallet is serving this page">✓</span>
+            </span>
+        </span>
+    </div>
+</header>
+
+<main>
+    <div class="notice success" th:if="${message}" th:text="${message}"></div>
+    <div class="notice error" th:if="${error}" th:text="${error}"></div>
+
+    <section>
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Acquire</p>
+                <h2>Issue a credential</h2>
+            </div>
+            <p>The wallet creates and retains a distinct ES256 holder key for each credential.</p>
+        </div>
+        <div class="type-grid">
+            <article class="type-card" th:each="type : ${credentialTypes}">
+                <div class="credential-mark" th:text="${#strings.substring(type.displayName(), 0, 1)}"></div>
+                <h3 th:text="${type.displayName()}"></h3>
+                <p th:text="${type.id()}"></p>
+                <form th:action="@{/credentials/issue/{type}(type=${type.id()})}" method="post">
+                    <button type="submit">Issue credential</button>
+                </form>
+            </article>
+        </div>
+    </section>
+
+    <section>
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Stored</p>
+                <h2>Wallet credentials</h2>
+            </div>
+            <p th:text="${credentials.size() + ' credential(s) in memory'}"></p>
+        </div>
+        <div class="empty" th:if="${credentials.isEmpty()}">
+            No credentials yet. Issue one above while the issuer is running.
+        </div>
+        <div class="credential-list" th:unless="${credentials.isEmpty()}">
+            <a class="credential-row" th:each="credential : ${credentials}"
+               th:href="@{/credentials/{id}(id=${credential.id()})}">
+                <div>
+                    <strong th:text="${credential.type().displayName()}"></strong>
+                    <span th:text="${credential.issuer()}"></span>
+                </div>
+                <div class="claims-preview">
+                    <span th:each="claim : ${credential.disclosures()}" th:text="${claim.claimName()}"></span>
+                </div>
+                <span class="arrow">View</span>
+            </a>
+        </div>
+    </section>
+</main>
+</body>
+</html>

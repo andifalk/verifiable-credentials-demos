@@ -1,0 +1,296 @@
+@grantType = urn:ietf:params:oauth:grant-type:pre-authorized_code
+
+### OpenID Credential Issuer metadata
+# @name credentialIssuerMetadata
+GET {{baseUrl}}/.well-known/openid-credential-issuer
+Accept: application/json
+
+> {%
+    client.test("Credential issuer metadata is available", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.credential_issuer === request.environment.get("baseUrl"),
+            "Unexpected credential issuer");
+        client.assert(response.body.credential_endpoint === request.environment.get("baseUrl") + "/credential",
+            "Unexpected credential endpoint");
+    });
+%}
+
+### OAuth authorization server metadata
+# @name authorizationServerMetadata
+GET {{baseUrl}}/.well-known/oauth-authorization-server
+Accept: application/json
+
+> {%
+    client.test("Authorization server metadata is available", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.token_endpoint === request.environment.get("baseUrl") + "/oauth2/token",
+            "Unexpected token endpoint");
+    });
+%}
+
+### SD-JWT VC issuer metadata
+# @name jwtVcIssuerMetadata
+GET {{baseUrl}}/.well-known/jwt-vc-issuer
+Accept: application/json
+
+> {%
+    client.test("JWT VC issuer metadata is available", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.jwks_uri === request.environment.get("baseUrl") + "/jwks",
+            "Unexpected JWKS URI");
+    });
+%}
+
+### Issuer public keys
+# @name jwks
+GET {{baseUrl}}/jwks
+Accept: application/json
+
+> {%
+    client.test("JWKS contains an issuer key", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(Array.isArray(response.body.keys) && response.body.keys.length > 0,
+            "Expected at least one public key");
+    });
+%}
+
+### Personal ID type metadata
+# @name personalIdTypeMetadata
+GET {{baseUrl}}/credentials/types/personal_id
+Accept: application/json
+
+> {%
+    client.test("Personal ID type metadata is available", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.vct.endsWith("/credentials/types/personal_id"), "Unexpected VCT");
+    });
+%}
+
+### University diploma type metadata
+# @name universityDiplomaTypeMetadata
+GET {{baseUrl}}/credentials/types/university_diploma
+Accept: application/json
+
+> {%
+    client.test("University diploma type metadata is available", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.vct.endsWith("/credentials/types/university_diploma"), "Unexpected VCT");
+    });
+%}
+
+### Driver's license type metadata
+# @name driversLicenseTypeMetadata
+GET {{baseUrl}}/credentials/types/drivers_license
+Accept: application/json
+
+> {%
+    client.test("Driver's license type metadata is available", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.vct.endsWith("/credentials/types/drivers_license"), "Unexpected VCT");
+    });
+%}
+
+### Create an offer using the selected configuration and its sample claims
+# Run this request before the offer retrieval and issuance requests below.
+# Change configurationId in http-client.env.json to test another credential type.
+# @name createOffer
+POST {{baseUrl}}/demo/offers/{{configurationId}}
+Content-Type: application/json
+Accept: application/json
+
+{}
+
+> {%
+    client.test("Credential offer is created", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.offer_uri, "Missing offer URI");
+        client.assert(response.body.pre_authorized_code, "Missing pre-authorized code");
+    });
+
+    const offerUri = response.body.offer_uri;
+    client.global.set("offerUri", offerUri);
+    client.global.set("offerId", offerUri.substring(offerUri.lastIndexOf("/") + 1));
+    client.global.set("preAuthorizedCode", response.body.pre_authorized_code);
+%}
+
+### Retrieve the previously created credential offer
+# @name getCredentialOffer
+GET {{baseUrl}}/credential-offer/{{offerId}}
+Accept: application/json
+
+> {%
+    client.test("Credential offer can be retrieved", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.credential_configuration_ids[0] ===
+            request.environment.get("configurationId"), "Unexpected credential configuration");
+    });
+%}
+
+### Exchange the single-use pre-authorized code for an access token
+# @name exchangePreAuthorizedCode
+POST {{baseUrl}}/oauth2/token
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type={{grantType}}&pre-authorized_code={{preAuthorizedCode}}
+
+> {%
+    client.test("Pre-authorized code is exchanged", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.token_type === "Bearer", "Expected a bearer token");
+        client.assert(response.body.access_token, "Missing access token");
+    });
+
+    client.global.set("accessToken", response.body.access_token);
+%}
+
+### Obtain a single-use credential nonce
+# @name createNonce
+POST {{baseUrl}}/nonce
+Accept: application/json
+
+> {%
+    client.test("Credential nonce is created", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.c_nonce, "Missing credential nonce");
+    });
+
+    client.global.set("credentialNonce", response.body.c_nonce);
+%}
+
+### Issue the selected credential
+# Requires IntelliJ IDEA 2026.1 or newer for ECDSA Web Crypto support.
+# Run createOffer, exchangePreAuthorizedCode, and createNonce first.
+# @name issueCredential
+< {%
+    function utf8Bytes(value) {
+        const encoded = encodeURIComponent(value);
+        const bytes = [];
+        for (let index = 0; index < encoded.length; index++) {
+            if (encoded[index] === "%") {
+                bytes.push(parseInt(encoded.substring(index + 1, index + 3), 16));
+                index += 2;
+            } else {
+                bytes.push(encoded.charCodeAt(index));
+            }
+        }
+        return Uint8Array.from(bytes);
+    }
+
+    function base64Url(value) {
+        const bytes = typeof value === "string"
+            ? utf8Bytes(value)
+            : new Uint8Array(value);
+        return btoa(String.fromCharCode(...bytes))
+            .replaceAll("+", "-")
+            .replaceAll("/", "_")
+            .replaceAll("=", "");
+    }
+
+    const privateKeyDer = Uint8Array.from(
+        atob("MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgXMpTO9h9dsmz9f9XfpvdUbU8PGt7ZMiN95Irv0XAgQyhRANCAASfwTy8KCebIMhKR7hFBW3S7CETQAUvrVyt8nuCYqQuAhK/55XnMAHUYFVD+aP/htk7zImcUKs0Ygsc3n1oIQR8"),
+        character => character.charCodeAt(0)
+    );
+    const privateKey = crypto.subtle.importKey(
+        "pkcs8",
+        privateKeyDer,
+        {name: "ECDSA", namedCurve: "P-256"},
+        false,
+        ["sign"]
+    );
+    const publicJwk = {
+        kty: "EC",
+        crv: "P-256",
+        x: "n8E8vCgnmyDISke4RQVt0uwhE0AFL61crfJ7gmKkLgI",
+        y: "Er_nlecwAdRgVUP5o_-G2TvMiZxQqzRiCxzefWghBHw"
+    };
+
+    const header = base64Url(JSON.stringify({
+        alg: "ES256",
+        typ: "openid4vci-proof+jwt",
+        jwk: publicJwk
+    }));
+    const payload = base64Url(JSON.stringify({
+        aud: request.environment.get("baseUrl"),
+        nonce: client.global.get("credentialNonce"),
+        iat: Math.floor(Date.now() / 1000)
+    }));
+    const signingInput = header + "." + payload;
+    const signature = crypto.subtle.sign(
+        {name: "ECDSA", hash: "SHA-256"},
+        privateKey,
+        utf8Bytes(signingInput)
+    );
+    request.variables.set("walletProof", signingInput + "." + base64Url(signature));
+%}
+POST {{baseUrl}}/credential
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "credential_configuration_id": "{{configurationId}}",
+  "proofs": {
+    "jwt": [
+      "{{walletProof}}"
+    ]
+  }
+}
+
+> {%
+    client.test("SD-JWT VC is issued", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        const credential = response.body.credentials[0].credential;
+        client.assert(credential, "Missing credential");
+        client.assert(credential.split("~").length > 1, "Expected an SD-JWT with disclosures");
+    });
+
+    client.global.set("issuedCredential", response.body.credentials[0].credential);
+%}
+
+### Create an offer with custom Personal ID claims
+# This request demonstrates the optional claims override accepted by the demo API.
+# @name createCustomPersonalIdOffer
+POST {{baseUrl}}/demo/offers/personal_id
+Content-Type: application/json
+Accept: application/json
+
+{
+  "claims": {
+    "given_name": "Ada",
+    "family_name": "Lovelace",
+    "birthdate": "1815-12-10",
+    "nationality": "GB",
+    "document_number": "PID-DEMO-ADA"
+  }
+}
+
+> {%
+    client.test("Offer with custom claims is created", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.pre_authorized_code, "Missing pre-authorized code");
+    });
+%}
+
+### Actuator health
+# @name health
+GET {{baseUrl}}/actuator/health
+Accept: application/json
+
+> {%
+    client.test("Application is healthy", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+        client.assert(response.body.status === "UP", "Application is not UP");
+    });
+%}
+
+### Actuator info
+# @name info
+GET {{baseUrl}}/actuator/info
+Accept: application/json
+
+> {%
+    client.test("Application info endpoint is available", function () {
+        client.assert(response.status === 200, "Expected HTTP 200");
+    });
+%}
