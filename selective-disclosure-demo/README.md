@@ -1,10 +1,11 @@
 # Selective Disclosure Demo
 
 This module demonstrates selective disclosure with verifiable credentials using a Spring Boot backend.
+The demo uses a simple in-memory wallet to store credentials and presentations and the [Authlete Java Library for SD-JWT](https://github.com/authlete/sd-jwt).
 
 ## Overview
 
-- A compact demo that shows the end-to-end flow for issuing verifiable credentials with selectively-disclosable claims
+- A compact demo that shows the end-to-end flow for issuing verifiable credentials with selectively disclosable claims
   and verifying presentations derived from them.
 
 ## Key features
